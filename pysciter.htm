@@ -14,6 +14,20 @@
 <body>
 
     <button #script_call_python>调用Python函数</button>
+    <button #btnGetJlccamWorkDir>获取jlccam工作目录</button>
+    <button #btnGetJlccamJobList>获取jlccam全部料号</button>
+
+    <div>
+        <div>
+            <label>jlccam工作目录</label>
+            <input |text #textJlccamWorkDir style="width: *;">
+        </div>
+
+        <div>
+            <select #selectJobList style="width: *;">
+            </select>
+        </div>
+    </div>
 
 </body>
 

@@ -2,8 +2,29 @@ function self.ready() {
     stdout << String.printf("界面资源加载成功\n");
 
     $(button#script_call_python).on("click", on_script_call_python_click);
+    $(#btnGetJlccamWorkDir).on("click", on_get_jlccam_work_directory_click);
+    $(#btnGetJlccamJobList).on("click", on_get_jlccam_job_list_click);
+
 }
 
 function on_script_call_python_click() {
     var retval = view.call_python("params");
+}
+
+function on_get_jlccam_work_directory_click() {
+    var retval = view.get_jlccam_work_directory();
+    $(#textJlccamWorkDir).text = retval.toString();
+}
+
+function on_get_jlccam_job_list_click() {
+    var retval = view.get_jlccam_job_list();
+    
+    var sel = $(#selectJobList);
+    sel.clear();
+
+    for (var i = 0; i < retval.length; i++) {
+        var option = new Element("option");
+        option.text = retval[i];
+        sel.append(option);
+    }
 }
