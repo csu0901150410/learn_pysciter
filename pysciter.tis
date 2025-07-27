@@ -1,0 +1,9 @@
+function self.ready() {
+    stdout << String.printf("界面资源加载成功\n");
+
+    $(button#script_call_python).on("click", on_script_call_python_click);
+}
+
+function on_script_call_python_click() {
+    var retval = view.call_python("params");
+}
