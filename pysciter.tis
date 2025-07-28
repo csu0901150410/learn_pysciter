@@ -1,14 +1,19 @@
 function self.ready() {
     stdout << String.printf("界面资源加载成功\n");
 
-    $(button#script_call_python).on("click", on_script_call_python_click);
+    $(button#btnCallCommand).on("click", on_call_command_click);
     $(#btnGetJlccamWorkDir).on("click", on_get_jlccam_work_directory_click);
     $(#btnGetJlccamJobList).on("click", on_get_jlccam_job_list_click);
+    $(#btnOpenJob).on("click", on_open_job_click);
 
 }
 
-function on_script_call_python_click() {
-    var retval = view.call_python("params");
+function on_call_command_click() {
+    var params = {};
+    params["name"] = "张三";
+    params["age"] = 18;
+    params["sex"] = "男";
+    var retval = view.call_command("hello_world", params);
 }
 
 function on_get_jlccam_work_directory_click() {
@@ -25,6 +30,17 @@ function on_get_jlccam_job_list_click() {
     for (var i = 0; i < retval.length; i++) {
         var option = new Element("option");
         option.text = retval[i];
+        option.value = retval[i];
         sel.append(option);
     }
+}
+
+function on_open_job_click() {
+    var sel = $(#selectJobList);
+    if (!sel.value)
+        return;
+    var params = {};
+    params["jobname"] = sel.value.toString();
+    params["show"] = true;
+    var retval = view.call_command("open_job", params);
 }

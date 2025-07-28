@@ -1,25 +1,89 @@
 import sciter
 
 import os
+import json
+
+import tkinter as tk
 
 from client import socket_client
+
+main_client = None
+
+def get_main_client():
+    global main_client
+    if main_client is None:
+        main_client = socket_client()
+    return main_client
+
+COMMANDS = {}
+
+def register_command(name):
+    def decorator(func):
+        COMMANDS[name] = func
+        return func
+    return decorator
+
+def execute_command(name, json_params = None):
+    if name not in COMMANDS:
+        return {"error": f"Command '{name}' not registered"}
+    
+    try:
+        if isinstance(json_params, str):
+            params = json.loads(json_params) if json_params else {}
+        elif isinstance(json_params, dict):
+            params = json_params
+        else:
+            params = {}
+        return COMMANDS[name](params)
+    except json.JSONDecodeError as e:
+        return {"error": f"Invalid JSON parameters: {str(e)}"}
+    except Exception as e:
+        return {"error": str(e)}
+    
+# 注册命令
+@register_command("hello_world")
+def hello_world(params):
+    print("命令 hello_world 被调用")
+    print(f"参数: {str(params)}")
+    pass
+
+@register_command("open_job")
+def open_job(params):
+    jobname = params.get("jobname")
+    show = params.get("show", True)
+    js = {}
+    js["job"] = jobname
+    js["show"] = show
+    return get_main_client().send_command("script_open_job", js)
+
 
 class Frame(sciter.Window):
 
     def __init__(self):
-        super().__init__(ismain=True, uni_theme=True, size=(800, 600))
-        self.client = socket_client()
+        root = tk.Tk()
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+        root.destroy()
+        
+        x = (screen_width - 800) / 2
+        y = (screen_height - 600) / 2
+
+        super().__init__(ismain=True, uni_theme=True, size=(800, 600), pos=(int(x), int(y)))
+        self.client = get_main_client()
         pass
 
-    # 可以在tis脚本中通过view.call_python()调用此函数
+    # 调用jlccam接口
+    def send_command(self, commandname, paramdict={}):
+        return self.client.send_command(commandname, paramdict)
+
+    # tis脚本通过view.call_command(xxx, params);调用名字为xxx的命令
     @sciter.script
-    def call_python(self, arg):
-        print('成功调用Python函数')
-        pass
+    def call_command(self, command_name, json_params = None):
+        return execute_command(command_name, json_params)
 
     @sciter.script
     def get_jlccam_work_directory(self):
-        ret = self.client.send_command('script_get_work_directory')
+        ret = self.send_command('script_get_work_directory')
         dir = ret["result"]
         dir = os.path.normpath(dir) # 路径标准化，去除对父级目录的引用
         return dir
