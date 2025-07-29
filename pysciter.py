@@ -7,6 +7,8 @@ import tkinter as tk
 
 from client import socket_client
 
+from command_manager import *
+
 main_client = None
 
 def get_main_client():
@@ -14,31 +16,6 @@ def get_main_client():
     if main_client is None:
         main_client = socket_client()
     return main_client
-
-COMMANDS = {}
-
-def register_command(name):
-    def decorator(func):
-        COMMANDS[name] = func
-        return func
-    return decorator
-
-def execute_command(name, json_params = None):
-    if name not in COMMANDS:
-        return {"error": f"Command '{name}' not registered"}
-    
-    try:
-        if isinstance(json_params, str):
-            params = json.loads(json_params) if json_params else {}
-        elif isinstance(json_params, dict):
-            params = json_params
-        else:
-            params = {}
-        return COMMANDS[name](params)
-    except json.JSONDecodeError as e:
-        return {"error": f"Invalid JSON parameters: {str(e)}"}
-    except Exception as e:
-        return {"error": str(e)}
     
 # 注册命令
 @register_command("hello_world")
@@ -55,6 +32,23 @@ def open_job(params):
     js["job"] = jobname
     js["show"] = show
     return get_main_client().send_command("script_open_job", js)
+
+@register_command("script_get_work_directory")
+def script_get_work_directory(params):
+    retval = get_main_client().send_command("script_get_work_directory")
+    workdir = retval["result"]
+    workdir = os.path.normpath(workdir) # 路径标准化，去除对父级目录的引用
+    return workdir
+
+@register_command("script_get_job_list")
+def script_get_job_list(params):
+    workdir = execute_command("script_get_work_directory")
+    job_list = []
+    for root, dirs, files in os.walk(str(workdir)):
+        for file in files:
+            if file.endswith(".ddw"):
+                job_list.append(file[:-4])
+    return job_list
 
 
 class Frame(sciter.Window):
@@ -80,23 +74,6 @@ class Frame(sciter.Window):
     @sciter.script
     def call_command(self, command_name, json_params = None):
         return execute_command(command_name, json_params)
-
-    @sciter.script
-    def get_jlccam_work_directory(self):
-        ret = self.send_command('script_get_work_directory')
-        dir = ret["result"]
-        dir = os.path.normpath(dir) # 路径标准化，去除对父级目录的引用
-        return dir
-    
-    @sciter.script
-    def get_jlccam_job_list(self):
-        workdir = self.get_jlccam_work_directory()
-        job_list = []
-        for root, dirs, files in os.walk(workdir):
-            for file in files:
-                if file.endswith(".ddw"):
-                    job_list.append(file[:-4])
-        return job_list
 
     
 if __name__ == '__main__':

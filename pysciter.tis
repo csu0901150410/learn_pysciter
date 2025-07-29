@@ -17,12 +17,12 @@ function on_call_command_click() {
 }
 
 function on_get_jlccam_work_directory_click() {
-    var retval = view.get_jlccam_work_directory();
+    var retval = view.call_command("script_get_work_directory");
     $(#textJlccamWorkDir).text = retval.toString();
 }
 
 function on_get_jlccam_job_list_click() {
-    var retval = view.get_jlccam_job_list();
+    var retval = view.call_command("script_get_job_list");
     
     var sel = $(#selectJobList);
     sel.clear();
